@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using MoneyMate.Models;
-using BCrypt.Net;
+﻿using MoneyMate.Models;
 
 namespace MoneyMate.Services
 {
@@ -49,6 +44,51 @@ namespace MoneyMate.Services
 
             var lines = await File.ReadAllLinesAsync(_filePath);
             return lines.Skip(1).Any(line => line.StartsWith(username + ","));
+        }
+
+        public async Task<bool> ValidateLoginAsync(string username, string password)
+        {
+            if (!File.Exists(_filePath))
+                return false;
+
+            var lines = await File.ReadAllLinesAsync(_filePath);
+            var userLine = lines.Skip(1) // Skip header
+                               .FirstOrDefault(line => line.StartsWith(username + ","));
+
+            if (userLine == null)
+                return false;
+
+            var parts = userLine.Split(',');
+            if (parts.Length < 2)
+                return false;
+
+            string storedHash = parts[1];
+            return BCrypt.Net.BCrypt.Verify(password, storedHash);
+        }
+
+        public async Task<User?> GetUserAsync(string username)
+        {
+            if (!File.Exists(_filePath))
+                return null;
+
+            var lines = await File.ReadAllLinesAsync(_filePath);
+            var userLine = lines.Skip(1)
+                               .FirstOrDefault(line => line.StartsWith(username + ","));
+
+            if (userLine == null)
+                return null;
+
+            var parts = userLine.Split(',');
+            if (parts.Length < 5)
+                return null;
+
+            return new User
+            {
+                Username = parts[0],
+                Email = parts[2],
+                Contact = parts[3],
+                PreferredCurrency = parts[4]
+            };
         }
     }
 }
