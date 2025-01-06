@@ -1,0 +1,119 @@
+﻿@page "/"
+@page "/register"
+@using MoneyMate.Models
+@using MoneyMate.Services
+@inject CsvService CsvService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Register for MoneyMate</h3>
+                </div>
+                <div class="card-body">
+                    @if (showSuccessMessage)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            Registration successful! Redirecting to login...
+                            <button type="button" class="btn-close" @onclick="() => showSuccessMessage = false"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @errorMessage
+                            <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+                        </div>
+                    }
+
+                    <EditForm Model="@user" OnValidSubmit="HandleRegistration">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <InputText @bind-Value="user.Username" class="form-control" />
+                            <ValidationMessage For="@(() => user.Username)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <InputText type="password" @bind-Value="user.Password" class="form-control" />
+                            <ValidationMessage For="@(() => user.Password)" class="text-danger" />
+                            <small class="text-muted">
+                                Password must contain at least 6 characters, including uppercase, lowercase, and numbers.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText type="email" @bind-Value="user.Email" class="form-control" />
+                            <ValidationMessage For="@(() => user.Email)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Contact</label>
+                            <InputText @bind-Value="user.Contact" class="form-control" />
+                            <ValidationMessage For="@(() => user.Contact)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Preferred Currency</label>
+                            <InputSelect @bind-Value="user.PreferredCurrency" class="form-select">
+                                <option value="">Select Currency</option>
+                                <option value="NPR">NPR (Nepalese Rupee)</option>
+                                <option value="USD">USD (US Dollar)</option>
+                                <option value="JPY">JPY (Japanese Yen)</option>
+                                <option value="INR">INR (Indian Rupee)</option>
+                                <option value="EUR">EUR (Euro)</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => user.PreferredCurrency)" class="text-danger" />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Register</button>
+                            <button type="button" class="btn btn-secondary" @onclick="NavigateToLogin">
+                                Already have an account? Login
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private User user = new User();
+    private string errorMessage = string.Empty;
+    private bool showSuccessMessage = false;
+
+    private async Task HandleRegistration()
+    {
+        try
+        {
+            if (await CsvService.IsUserExistsAsync(user.Username))
+            {
+                errorMessage = "Username already exists!";
+                return;
+            }
+
+            await CsvService.SaveUserAsync(user);
+            showSuccessMessage = true;
+            await Task.Delay(2000); // Show success message for 2 seconds
+            NavigationManager.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred during registration. Please try again.";
+            Console.WriteLine($"Registration error: {ex.Message}");
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+}
