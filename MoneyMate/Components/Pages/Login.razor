@@ -2,6 +2,7 @@
 @using MoneyMate.Models
 @using MoneyMate.Services
 @inject CsvService CsvService
+@inject StateService StateService
 @inject NavigationManager NavigationManager
 
 <div class="container mt-5">
@@ -49,27 +50,32 @@
 </div>
 
 @code {
-    private LoginModel loginModel = new LoginModel();
+    private LoginModel loginModel = new();
     private string errorMessage = string.Empty;
 
     private async Task HandleLogin()
     {
         try
         {
+            Console.WriteLine($"Attempting login for user: {loginModel.Username}"); // Debug log
             var loginResult = await CsvService.ValidateLoginAsync(loginModel.Username, loginModel.Password);
+
             if (loginResult)
             {
-                NavigationManager.NavigateTo("/dashboard");
+                Console.WriteLine("Login successful, setting username and navigating"); // Debug log
+                StateService.CurrentUsername = loginModel.Username;
+                NavigationManager.NavigateTo("/dashboard", true); // Force reload
             }
             else
             {
+                Console.WriteLine("Login failed"); // Debug log
                 errorMessage = "Invalid username or password";
             }
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Login error: {ex.Message}"); // Debug log
             errorMessage = "An error occurred during login. Please try again.";
-            Console.WriteLine($"Login error: {ex.Message}");
         }
     }
 

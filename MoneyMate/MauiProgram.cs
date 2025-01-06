@@ -23,6 +23,9 @@ namespace MoneyMate
 #endif
 
             builder.Services.AddScoped<CsvService>();
+            builder.Services.AddSingleton<StateService>();
+            builder.Services.AddScoped<TransactionService>();
+
 
 
 
