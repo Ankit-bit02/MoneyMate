@@ -4,6 +4,7 @@
 @inject TransactionService TransactionService
 @inject StateService StateService
 @inject NavigationManager NavigationManager
+@inject CsvService CsvService
 
 <div class="container-fluid p-4">
     <!-- Header Section -->
@@ -61,7 +62,7 @@
             <div class="card bg-success text-white shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Income</h6>
-                    <h3 class="card-title mb-0">NPR. @(Summary?.TotalInflowAmount.ToString("N2") ?? "0.00")</h3>
+                    <h3 class="card-title mb-0">@UserCurrency @(Summary?.TotalInflowAmount.ToString("N2") ?? "0.00")</h3>
                 </div>
             </div>
         </div>
@@ -69,7 +70,7 @@
             <div class="card bg-danger text-white shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Expenses</h6>
-                    <h3 class="card-title mb-0">NPR. @(Summary?.TotalOutflowAmount.ToString("N2") ?? "0.00")</h3>
+                    <h3 class="card-title mb-0">@UserCurrency @(Summary?.TotalOutflowAmount.ToString("N2") ?? "0.00")</h3>
                 </div>
             </div>
         </div>
@@ -77,7 +78,7 @@
             <div class="card bg-info text-white shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Current Balance</h6>
-                    <h3 class="card-title mb-0">NPR. @(Summary?.Balance.ToString("N2") ?? "0.00")</h3>
+                    <h3 class="card-title mb-0">@UserCurrency @(Summary?.Balance.ToString("N2") ?? "0.00")</h3>
                 </div>
             </div>
         </div>
@@ -85,7 +86,7 @@
             <div class="card bg-warning shadow-sm h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Pending Debts</h6>
-                    <h3 class="card-title mb-0">NPR. @(Summary?.RemainingDebt.ToString("N2") ?? "0.00")</h3>
+                    <h3 class="card-title mb-0">@UserCurrency @(Summary?.RemainingDebt.ToString("N2") ?? "0.00")</h3>
                 </div>
             </div>
         </div>
@@ -124,6 +125,7 @@
     private DateTime? EndDate { get; set; }
     private bool ShowAddTransaction { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
+    private string UserCurrency { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -132,20 +134,20 @@
             NavigationManager.NavigateTo("/login");
             return;
         }
+
+        var user = await CsvService.GetUserAsync(StateService.CurrentUsername);
+        if (user != null)
+        {
+            UserCurrency = user.PreferredCurrency;
+        }
+
         await LoadDashboard();
     }
 
-    private async Task LoadDashboard()
+    private void Logout()
     {
-        try
-        {
-            Summary = await TransactionService.GetTransactionSummaryAsync(StateService.CurrentUsername, StartDate, EndDate);
-        }
-        catch (Exception ex)
-        {
-            ErrorMessage = "Error loading dashboard data.";
-            Console.WriteLine($"Dashboard error: {ex.Message}");
-        }
+        StateService.CurrentUsername = string.Empty;
+        NavigationManager.NavigateTo("/login");
     }
 
     private async Task ApplyFilter()
@@ -165,9 +167,16 @@
         await LoadDashboard();
     }
 
-    private void Logout()
+    private async Task LoadDashboard()
     {
-        StateService.CurrentUsername = string.Empty;
-        NavigationManager.NavigateTo("/login");
+        try
+        {
+            Summary = await TransactionService.GetTransactionSummaryAsync(StateService.CurrentUsername, StartDate, EndDate);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error loading dashboard data.";
+            Console.WriteLine($"Dashboard error: {ex.Message}");
+        }
     }
 }

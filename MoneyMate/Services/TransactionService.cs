@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using System.Text;
 using MoneyMate.Models;
 
 namespace MoneyMate.Services
@@ -11,30 +11,52 @@ namespace MoneyMate.Services
         {
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             string directoryPath = Path.Combine(desktopPath, "MoneyMate");
-            _filePath = Path.Combine(directoryPath, "transactions.json");
+            _filePath = Path.Combine(directoryPath, "transactions.csv");
 
             if (!Directory.Exists(directoryPath))
-            {
                 Directory.CreateDirectory(directoryPath);
-            }
 
             if (!File.Exists(_filePath))
             {
-                File.WriteAllText(_filePath, JsonSerializer.Serialize(new List<Transaction>()));
+                using (StreamWriter sw = File.CreateText(_filePath))
+                {
+                    sw.WriteLine("Id,Username,Type,Title,Amount,Date,Note,Tags,DueDate,DebtSource,IsCleared");
+                }
             }
         }
 
         public async Task<List<Transaction>> GetUserTransactionsAsync(string username, DateTime? startDate = null, DateTime? endDate = null)
         {
-            var content = await File.ReadAllTextAsync(_filePath);
-            var transactions = JsonSerializer.Deserialize<List<Transaction>>(content) ?? new List<Transaction>();
+            var transactions = new List<Transaction>();
+            var lines = await File.ReadAllLinesAsync(_filePath);
 
-            return transactions
-                .Where(t => t.Username == username)
-                .Where(t => !startDate.HasValue || t.Date >= startDate)
-                .Where(t => !endDate.HasValue || t.Date <= endDate)
-                .OrderByDescending(t => t.Date)
-                .ToList();
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var cols = lines[i].Split(',');
+                if (cols[1] == username)
+                {
+                    var transaction = new Transaction
+                    {
+                        Id = cols[0],
+                        Username = cols[1],
+                        Type = Enum.Parse<TransactionType>(cols[2]),
+                        Title = cols[3],
+                        Amount = decimal.Parse(cols[4]),
+                        Date = DateTime.Parse(cols[5]),
+                        Note = cols[6],
+                        Tags = cols[7].Split(';').ToList(),
+                        DueDate = !string.IsNullOrEmpty(cols[8]) ? DateTime.Parse(cols[8]) : null,
+                        DebtSource = cols[9],
+                        IsCleared = bool.Parse(cols[10])
+                    };
+
+                    if (!startDate.HasValue || transaction.Date >= startDate)
+                        if (!endDate.HasValue || transaction.Date <= endDate)
+                            transactions.Add(transaction);
+                }
+            }
+
+            return transactions.OrderByDescending(t => t.Date).ToList();
         }
 
         public async Task<TransactionSummary> GetTransactionSummaryAsync(string username, DateTime? startDate = null, DateTime? endDate = null)
@@ -56,21 +78,23 @@ namespace MoneyMate.Services
 
         public async Task AddTransactionAsync(Transaction transaction)
         {
-            var transactions = await GetAllTransactionsAsync();
-            transactions.Add(transaction);
-            await SaveTransactionsAsync(transactions);
+            var line = $"{transaction.Id},{transaction.Username},{transaction.Type},{transaction.Title}," +
+                      $"{transaction.Amount},{transaction.Date:yyyy-MM-dd}," +
+                      $"{transaction.Note?.Replace(",", ";")}," +
+                      $"{string.Join(";", transaction.Tags)}," +
+                      $"{transaction.DueDate:yyyy-MM-dd}," +
+                      $"{transaction.DebtSource}," +
+                      $"{transaction.IsCleared}";
+
+            await File.AppendAllTextAsync(_filePath, Environment.NewLine + line);
         }
 
-        private async Task<List<Transaction>> GetAllTransactionsAsync()
+        public async Task<bool> HasSufficientBalanceAsync(string username, decimal amount)
         {
-            var content = await File.ReadAllTextAsync(_filePath);
-            return JsonSerializer.Deserialize<List<Transaction>>(content) ?? new List<Transaction>();
-        }
-
-        private async Task SaveTransactionsAsync(List<Transaction> transactions)
-        {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            await File.WriteAllTextAsync(_filePath, JsonSerializer.Serialize(transactions, options));
+            var transactions = await GetUserTransactionsAsync(username);
+            var income = transactions.Where(t => t.Type == TransactionType.Credit).Sum(t => t.Amount);
+            var expenses = transactions.Where(t => t.Type == TransactionType.Debit).Sum(t => t.Amount);
+            return (income - expenses) >= amount;
         }
     }
 }

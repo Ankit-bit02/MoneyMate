@@ -1,4 +1,6 @@
-﻿namespace MoneyMate.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MoneyMate.Models
 {
     public enum TransactionType
     {
@@ -10,8 +12,12 @@
     public class Transaction
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
+        [Required(ErrorMessage = "Title is required")]
         public string Title { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Amount is required")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
         public decimal Amount { get; set; }
+        [Required]
         public TransactionType Type { get; set; }
         public DateTime Date { get; set; } = DateTime.Now;
         public string? Note { get; set; }
