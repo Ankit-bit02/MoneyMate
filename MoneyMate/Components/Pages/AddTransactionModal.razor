@@ -1,0 +1,161 @@
+﻿@using MoneyMate.Models
+@using MoneyMate.Services
+@inject TransactionService TransactionService
+@inject StateService StateService
+
+@if (Show)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Transaction</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose"></button>
+                </div>
+                <EditForm Model="@transaction" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body">
+                        @if (!string.IsNullOrEmpty(ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@ErrorMessage</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Transaction Type</label>
+                            <InputSelect @bind-Value="transaction.Type" class="form-select">
+                                <option value="@TransactionType.Credit">Credit (Income)</option>
+                                <option value="@TransactionType.Debit">Debit (Expense)</option>
+                                <option value="@TransactionType.Debt">Debt</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => transaction.Type)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <InputText @bind-Value="transaction.Title" class="form-control" />
+                            <ValidationMessage For="@(() => transaction.Title)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Amount (@UserCurrency)</label>
+                            <InputNumber @bind-Value="transaction.Amount" class="form-control" />
+                            <ValidationMessage For="@(() => transaction.Amount)" />
+                        </div>
+
+                        @if (transaction.Type == TransactionType.Debt)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Due Date</label>
+                                <InputDate @bind-Value="transaction.DueDate" class="form-control" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Debt Source</label>
+                                <InputText @bind-Value="transaction.DebtSource" class="form-control" />
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label">Tags (comma-separated)</label>
+                            <InputText @bind-Value="tagInput" class="form-control" placeholder="e.g., monthly, food, rent" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Note (optional)</label>
+                            <InputTextArea @bind-Value="transaction.Note" class="form-control" rows="3" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="mb-2">Common Tags</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var tag in commonTags)
+                                {
+                                    <span class="badge bg-secondary" style="cursor: pointer;" @onclick="() => AddTag(tag)">
+                                        @tag
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Transaction</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback<bool> ShowChanged { get; set; }
+    [Parameter] public string UserCurrency { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnTransactionAdded { get; set; }
+
+    private Transaction transaction = new();
+    private string tagInput = string.Empty;
+    private string ErrorMessage = string.Empty;
+    private readonly string[] commonTags = { "Monthly", "Food", "Drinks", "Clothes", "Gadgets", "Fuel", "Rent", "EMI", "Party" };
+
+    private async Task OnClose()
+    {
+        transaction = new();
+        tagInput = string.Empty;
+        ErrorMessage = string.Empty;
+        await ShowChanged.InvokeAsync(false);
+    }
+
+    private void AddTag(string tag)
+    {
+        if (string.IsNullOrEmpty(tagInput))
+            tagInput = tag;
+        else if (!tagInput.Split(',').Select(t => t.Trim()).Contains(tag))
+            tagInput += $", {tag}";
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            ErrorMessage = string.Empty;  // Clear any previous errors
+
+            if (transaction.Type == TransactionType.Debit)
+            {
+                var hasBalance = await TransactionService.HasSufficientBalanceAsync(
+                    StateService.CurrentUsername,
+                    transaction.Amount
+                );
+
+                if (!hasBalance)
+                {
+                    ErrorMessage = "Insufficient balance for this transaction";
+                    return;
+                }
+            }
+
+            // Set username and tags
+            transaction.Username = StateService.CurrentUsername;
+            transaction.Tags = tagInput.Split(',')
+                                     .Select(t => t.Trim())
+                                     .Where(t => !string.IsNullOrEmpty(t))
+                                     .ToList();
+
+            await TransactionService.AddTransactionAsync(transaction);
+
+            // Show success message (you can add a success message property)
+            await OnTransactionAdded.InvokeAsync();  // This will refresh the dashboard
+            await OnClose();  // Close the modal
+
+            // Reset the form
+            transaction = new();
+            tagInput = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error adding transaction. Please try again.";
+            Console.WriteLine($"Add transaction error: {ex.Message}");
+        }
+    }
+}

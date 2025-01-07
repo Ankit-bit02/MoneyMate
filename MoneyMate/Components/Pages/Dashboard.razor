@@ -119,6 +119,28 @@
     </div>
 </div>
 
+<!-- Messages Section -->
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        @ErrorMessage
+            <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
+        </div>
+}
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        @SuccessMessage
+            <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
+        </div>
+}
+
+<AddTransactionModal 
+    Show="ShowAddTransaction"
+    ShowChanged="(value) => ShowAddTransaction = value"
+    UserCurrency="@UserCurrency"
+    OnTransactionAdded="OnTransactionAdded" />
+
 @code {
     private TransactionSummary Summary { get; set; } = new();
     private DateTime? StartDate { get; set; }
@@ -126,6 +148,9 @@
     private bool ShowAddTransaction { get; set; }
     private string ErrorMessage { get; set; } = string.Empty;
     private string UserCurrency { get; set; } = string.Empty;
+    private string SuccessMessage { get; set; } = string.Empty;
+
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -172,11 +197,22 @@
         try
         {
             Summary = await TransactionService.GetTransactionSummaryAsync(StateService.CurrentUsername, StartDate, EndDate);
+            // If this is called after adding a transaction, show success message
+            if (!string.IsNullOrEmpty(SuccessMessage))
+            {
+                StateHasChanged();  // Force UI update
+            }
         }
         catch (Exception ex)
         {
             ErrorMessage = "Error loading dashboard data.";
             Console.WriteLine($"Dashboard error: {ex.Message}");
         }
+    }
+
+    private async Task OnTransactionAdded()
+    {
+        SuccessMessage = "Transaction added successfully!";
+        await LoadDashboard();
     }
 }
