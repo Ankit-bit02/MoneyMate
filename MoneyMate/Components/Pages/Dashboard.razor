@@ -16,11 +16,14 @@
                     <p class="text-muted">Welcome back, @StateService.CurrentUsername!</p>
                 </div>
                 <div>
-                    <button class="btn btn-primary me-2" @onclick="() => ShowAddTransaction = true">
-                        <i class="fas fa-plus"></i> Add Transaction
+                    <button class="btn btn-primary me-2" @onclick="@(() => ShowAddTransaction = true)">
+                        <span class="fas fa-plus"></span> Add Transaction
+                    </button>
+                    <button class="btn btn-info me-2 text-white" @onclick="@(() => NavigationManager.NavigateTo("/debts"))">
+                        <span class="fas fa-money-bill"></span> Manage Debts
                     </button>
                     <button class="btn btn-outline-danger" @onclick="Logout">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <span class="fas fa-sign-out-alt"></span> Logout
                     </button>
                 </div>
             </div>
@@ -46,10 +49,10 @@
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-primary me-2" @onclick="ApplyFilter">
-                        <i class="fas fa-filter"></i> Apply Filter
+                        <span class="fas fa-filter"></span> Apply Filter
                     </button>
                     <button class="btn btn-outline-secondary" @onclick="ResetFilter">
-                        <i class="fas fa-undo"></i> Reset
+                        <span class="fas fa-undo"></span> Reset
                     </button>
                 </div>
             </div>
@@ -119,20 +122,19 @@
     </div>
 </div>
 
-<!-- Messages Section -->
 @if (!string.IsNullOrEmpty(ErrorMessage))
 {
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
         @ErrorMessage
-            <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
-        </div>
+                <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
+            </div>
 }
 @if (!string.IsNullOrEmpty(SuccessMessage))
 {
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
         @SuccessMessage
-            <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
-        </div>
+                <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
+            </div>
 }
 
 <AddTransactionModal 
@@ -149,8 +151,6 @@
     private string ErrorMessage { get; set; } = string.Empty;
     private string UserCurrency { get; set; } = string.Empty;
     private string SuccessMessage { get; set; } = string.Empty;
-
-
 
     protected override async Task OnInitializedAsync()
     {
@@ -197,10 +197,9 @@
         try
         {
             Summary = await TransactionService.GetTransactionSummaryAsync(StateService.CurrentUsername, StartDate, EndDate);
-            // If this is called after adding a transaction, show success message
             if (!string.IsNullOrEmpty(SuccessMessage))
             {
-                StateHasChanged();  // Force UI update
+                StateHasChanged();
             }
         }
         catch (Exception ex)
@@ -212,7 +211,17 @@
 
     private async Task OnTransactionAdded()
     {
-        SuccessMessage = "Transaction added successfully!";
-        await LoadDashboard();
+        try
+        {
+            SuccessMessage = "Transaction added successfully!";
+            ErrorMessage = string.Empty;
+            await LoadDashboard();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error updating dashboard after adding transaction.";
+            Console.WriteLine($"Error in OnTransactionAdded: {ex.Message}");
+        }
     }
 }
