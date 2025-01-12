@@ -177,12 +177,23 @@
 
     private async Task ApplyFilter()
     {
-        if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate)
+        try
         {
-            ErrorMessage = "Start date cannot be after end date";
-            return;
+            if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate)
+            {
+                ErrorMessage = "Start date cannot be after end date";
+                return;
+            }
+
+            Console.WriteLine($"Applying filter - Start: {StartDate:d}, End: {EndDate:d}"); // Debug log
+            await LoadDashboard();
+            StateHasChanged();
         }
-        await LoadDashboard();
+        catch (Exception ex)
+        {
+            ErrorMessage = "Error applying date filter.";
+            Console.WriteLine($"Filter error: {ex.Message}");
+        }
     }
 
     private async Task ResetFilter()

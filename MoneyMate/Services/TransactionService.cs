@@ -32,12 +32,11 @@ namespace MoneyMate.Services
                 var transactions = new List<Transaction>();
                 var lines = await File.ReadAllLinesAsync(_filePath);
 
-                Console.WriteLine($"Found {lines.Length} lines in transactions file"); // Debug log
+                Console.WriteLine($"Found {lines.Length} lines in transactions file");
 
-                // Skip header line and check if there's any data
                 if (lines.Length <= 1)
                 {
-                    Console.WriteLine("No transactions found (only header)"); // Debug log
+                    Console.WriteLine("No transactions found (only header)");
                     return transactions;
                 }
 
@@ -63,24 +62,34 @@ namespace MoneyMate.Services
                                 IsCleared = bool.Parse(cols[10])
                             };
 
-                            if (!startDate.HasValue || transaction.Date >= startDate)
-                                if (!endDate.HasValue || transaction.Date <= endDate)
-                                    transactions.Add(transaction);
+                            bool includeTransaction = true;
+                            if (startDate.HasValue)
+                            {
+                                includeTransaction = transaction.Date.Date >= startDate.Value.Date;
+                            }
+                            if (endDate.HasValue && includeTransaction)
+                            {
+                                includeTransaction = transaction.Date.Date <= endDate.Value.Date;
+                            }
+
+                            if (includeTransaction)
+                            {
+                                transactions.Add(transaction);
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error parsing transaction at line {i}: {ex.Message}"); // Debug log
-                        continue; // Skip problematic lines but continue processing
+                        Console.WriteLine($"Error parsing transaction at line {i}: {ex.Message}");
+                        continue;
                     }
                 }
 
-                Console.WriteLine($"Returning {transactions.Count} transactions"); // Debug log
                 return transactions.OrderByDescending(t => t.Date).ToList();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading transactions: {ex.Message}"); // Debug log
+                Console.WriteLine($"Error reading transactions: {ex.Message}");
                 throw;
             }
         }
@@ -90,7 +99,6 @@ namespace MoneyMate.Services
             var lines = await File.ReadAllLinesAsync(_filePath);
             var transactions = new List<Transaction>();
 
-            // Skip header
             for (int i = 1; i < lines.Length; i++)
             {
                 var cols = lines[i].Split(',');
@@ -124,7 +132,7 @@ namespace MoneyMate.Services
         {
             var lines = new List<string>
             {
-                "Id,Username,Type,Title,Amount,Date,Note,Tags,DueDate,DebtSource,IsCleared" // Header
+                "Id,Username,Type,Title,Amount,Date,Note,Tags,DueDate,DebtSource,IsCleared"
             };
 
             foreach (var t in transactions)
@@ -146,7 +154,6 @@ namespace MoneyMate.Services
         {
             var transactions = await GetUserTransactionsAsync(username, startDate, endDate);
 
-            // Only count uncleared debts and credits for total inflow
             var totalInflow = transactions.Where(t => t.Type == TransactionType.Credit ||
                                                     (t.Type == TransactionType.Debt && !t.IsCleared))
                                         .Sum(t => t.Amount);
@@ -164,7 +171,7 @@ namespace MoneyMate.Services
             {
                 TotalInflowAmount = totalInflow,
                 TotalOutflowAmount = totalOutflow,
-                TotalDebtAmount = pendingDebts,  // This will be positive
+                TotalDebtAmount = pendingDebts,
                 ClearedDebtAmount = clearedDebts,
                 PendingDebts = transactions.Where(t => t.Type == TransactionType.Debt && !t.IsCleared)
                                          .OrderBy(t => t.DueDate)
@@ -177,41 +184,28 @@ namespace MoneyMate.Services
                                                    .MaxBy(t => t.Amount)
             };
         }
-        public async Task<bool> ClearDebtAsync(string debtId, string username)
+
+        public async Task<decimal> GetAvailableBalanceAsync(string username)
         {
-            try
-            {
-                var transactions = await GetAllTransactionsAsync();
-                var debt = transactions.FirstOrDefault(t => t.Id == debtId && t.Username == username);
+            var transactions = await GetUserTransactionsAsync(username);
+            var totalInflow = transactions.Where(t => t.Type == TransactionType.Credit ||
+                                                    (t.Type == TransactionType.Debt && !t.IsCleared))
+                                        .Sum(t => t.Amount);
+            var totalOutflow = transactions.Where(t => t.Type == TransactionType.Debit)
+                                         .Sum(t => t.Amount);
+            return totalInflow - totalOutflow;
+        }
 
-                if (debt == null || debt.Type != TransactionType.Debt)
-                    return false;
-
-                // Check if user has sufficient balance from cash inflows
-                var creditTotal = transactions.Where(t => t.Username == username && t.Type == TransactionType.Credit)
-                                            .Sum(t => t.Amount);
-                var debitTotal = transactions.Where(t => t.Username == username && t.Type == TransactionType.Debit)
-                                           .Sum(t => t.Amount);
-                var availableBalance = creditTotal - debitTotal;
-
-                if (availableBalance < debt.Amount)
-                    return false;
-
-                debt.IsCleared = true;
-                await SaveTransactionsAsync(transactions);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+        public async Task<bool> HasSufficientBalanceAsync(string username, decimal amount)
+        {
+            var availableBalance = await GetAvailableBalanceAsync(username);
+            return availableBalance >= amount;
         }
 
         public async Task AddTransactionAsync(Transaction transaction)
         {
             try
             {
-                // Ensure note and tags don't contain commas as they would break CSV format
                 var safeNote = transaction.Note?.Replace(",", ";");
                 var safeTags = string.Join(";", transaction.Tags ?? new List<string>());
 
@@ -223,22 +217,65 @@ namespace MoneyMate.Services
                           $"{transaction.DebtSource}," +
                           $"{transaction.IsCleared}";
 
-                Console.WriteLine($"Adding transaction: {line}"); // Debug log
                 await File.AppendAllTextAsync(_filePath, Environment.NewLine + line);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error adding transaction: {ex.Message}"); // Debug log
+                Console.WriteLine($"Error adding transaction: {ex.Message}");
                 throw;
             }
         }
 
-        public async Task<bool> HasSufficientBalanceAsync(string username, decimal amount)
+        public async Task<bool> ClearDebtAsync(string debtId, string username, decimal paymentAmount)
         {
-            var transactions = await GetUserTransactionsAsync(username);
-            var income = transactions.Where(t => t.Type == TransactionType.Credit).Sum(t => t.Amount);
-            var expenses = transactions.Where(t => t.Type == TransactionType.Debit).Sum(t => t.Amount);
-            return (income - expenses) >= amount;
+            try
+            {
+                var transactions = await GetAllTransactionsAsync();
+                var debt = transactions.FirstOrDefault(t => t.Id == debtId && t.Username == username);
+
+                if (debt == null || debt.Type != TransactionType.Debt || paymentAmount > debt.Amount)
+                    return false;
+
+                // When clearing a debt, its full amount should be available as balance
+                // because the debt itself provides the money to pay itself
+                var availableBalance = debt.Amount;  // The debt amount itself is available to clear the debt
+
+                if (paymentAmount > availableBalance)
+                    return false;
+
+                if (paymentAmount == debt.Amount)
+                {
+                    debt.IsCleared = true;
+                }
+                else
+                {
+                    var remainingDebt = new Transaction
+                    {
+                        Username = debt.Username,
+                        Type = TransactionType.Debt,
+                        Title = $"Remaining: {debt.Title}",
+                        Amount = debt.Amount - paymentAmount,
+                        Date = DateTime.Now,
+                        DueDate = debt.DueDate,
+                        DebtSource = debt.DebtSource,
+                        Note = $"Remaining debt from {debt.Title}",
+                        Tags = debt.Tags,
+                        IsCleared = false
+                    };
+
+                    debt.IsCleared = true;
+                    debt.Amount = paymentAmount;
+                    transactions.Add(remainingDebt);
+                }
+
+                await SaveTransactionsAsync(transactions);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error clearing debt: {ex.Message}");
+                return false;
+            }
         }
     }
 }

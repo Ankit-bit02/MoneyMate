@@ -4,6 +4,7 @@
 @inject TransactionService TransactionService
 @inject StateService StateService
 @inject NavigationManager NavigationManager
+@inject CsvService CsvService
 
 <div class="container-fluid p-4">
     <div class="row mb-4">
@@ -19,18 +20,18 @@
 
     @if (!string.IsNullOrEmpty(ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
             @ErrorMessage
-            <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
-        </div>
+                <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
+            </div>
     }
 
     @if (!string.IsNullOrEmpty(SuccessMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
             @SuccessMessage
-            <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
-        </div>
+                <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
+            </div>
     }
 
     <div class="card shadow-sm">
@@ -55,43 +56,43 @@
                             @foreach (var debt in DebtsList)
                             {
                                 var isPastDue = debt.DueDate.HasValue && debt.DueDate.Value < DateTime.Today;
-                                <tr class="@(isPastDue && !debt.IsCleared ? "table-danger" : debt.IsCleared ? "table-success" : "")">
-                                    <td>@debt.Date.ToShortDateString()</td>
-                                    <td>@debt.Title</td>
-                                    <td>@debt.Amount.ToString("C2")</td>
-                                    <td>@(debt.DueDate?.ToShortDateString() ?? "N/A")</td>
-                                    <td>@(debt.DebtSource ?? "N/A")</td>
-                                    <td>
+                                        <tr class="@(isPastDue && !debt.IsCleared ? "table-danger" : debt.IsCleared ? "table-success" : "")">
+                                            <td>@debt.Date.ToShortDateString()</td>
+                                            <td>@debt.Title</td>
+                                            <td>@debt.Amount.ToString("C2")</td>
+                                            <td>@(debt.DueDate?.ToShortDateString() ?? "N/A")</td>
+                                            <td>@(debt.DebtSource ?? "N/A")</td>
+                                            <td>
                                         @if (debt.IsCleared)
                                         {
-                                            <span class="badge bg-success">Cleared</span>
+                                                        <span class="badge bg-success">Cleared</span>
                                         }
                                         else if (isPastDue)
                                         {
-                                            <span class="badge bg-danger">Past Due</span>
+                                                        <span class="badge bg-danger">Past Due</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-warning">Pending</span>
+                                                        <span class="badge bg-warning">Pending</span>
                                         }
-                                    </td>
-                                    <td>@(debt.Note ?? "N/A")</td>
-                                    <td>
+                                            </td>
+                                            <td>@(debt.Note ?? "N/A")</td>
+                                            <td>
                                         @if (!debt.IsCleared)
                                         {
-                                            <button class="btn btn-sm btn-success" @onclick="() => ClearDebt(debt.Id)">
-                                                Clear Debt
-                                            </button>
+                                                        <button class="btn btn-sm btn-success" @onclick="() => ShowClearDebtModal(debt)">
+                                                            Clear Debt
+                                                        </button>
                                         }
-                                    </td>
-                                </tr>
+                                            </td>
+                                        </tr>
                             }
                         }
                         else
                         {
-                            <tr>
-                                <td colspan="8" class="text-center">No debts found.</td>
-                            </tr>
+                                <tr>
+                                    <td colspan="8" class="text-center">No debts found.</td>
+                                </tr>
                         }
                     </tbody>
                 </table>
@@ -100,10 +101,52 @@
     </div>
 </div>
 
+@if (ShowDebtModal && SelectedDebt != null)
+{
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Clear Debt</h5>
+                        <button type="button" class="btn-close" @onclick="CloseDebtModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <p>Total Debt Amount: @SelectedDebt.Amount.ToString("C2")</p>
+                        @if (SelectedDebt.DueDate.HasValue)
+                        {
+                                    <p>Due Date: @SelectedDebt.DueDate.Value.ToShortDateString()</p>
+                        }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Amount to Clear</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   step="0.01" 
+                                   min="0.01" 
+                                   max="@SelectedDebt.Amount" 
+                                   @bind="PaymentAmount" />
+                            <small class="text-muted">Enter the amount you want to clear from this debt.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseDebtModal">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="() => ClearDebt(SelectedDebt.Id)">Clear Debt</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     private List<Transaction> DebtsList { get; set; } = new();
     private string ErrorMessage { get; set; } = string.Empty;
     private string SuccessMessage { get; set; } = string.Empty;
+    private bool ShowDebtModal { get; set; }
+    private Transaction? SelectedDebt { get; set; }
+    private decimal PaymentAmount { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -132,14 +175,37 @@
         }
     }
 
+    private void ShowClearDebtModal(Transaction debt)
+    {
+        SelectedDebt = debt;
+        PaymentAmount = debt.Amount;  // Default to full amount
+        ShowDebtModal = true;
+    }
+
+    private void CloseDebtModal()
+    {
+        ShowDebtModal = false;
+        SelectedDebt = null;
+        PaymentAmount = 0;
+    }
+
     private async Task ClearDebt(string debtId)
     {
         try
         {
-            var result = await TransactionService.ClearDebtAsync(debtId, StateService.CurrentUsername);
+            if (PaymentAmount <= 0 || SelectedDebt == null || PaymentAmount > SelectedDebt.Amount)
+            {
+                ErrorMessage = "Invalid payment amount";
+                return;
+            }
+
+            var result = await TransactionService.ClearDebtAsync(debtId, StateService.CurrentUsername, PaymentAmount);
             if (result)
             {
-                SuccessMessage = "Debt cleared successfully!";
+                SuccessMessage = PaymentAmount == SelectedDebt.Amount
+                    ? "Debt cleared successfully!"
+                    : $"Debt partially cleared. Remaining amount: {(SelectedDebt.Amount - PaymentAmount):C2}";
+                CloseDebtModal();
                 await LoadDebts();
             }
             else
