@@ -40,32 +40,41 @@ namespace MoneyMate.Models
 
     public class TransactionSummary
     {
+        // Basic Amounts
         public decimal TotalInflowAmount { get; set; }
         public decimal TotalOutflowAmount { get; set; }
         public decimal TotalDebtAmount { get; set; }
         public decimal ClearedDebtAmount { get; set; }
+
+        // Lists
         public List<Transaction> PendingDebts { get; set; } = new();
+        public List<Transaction> Transactions { get; set; } = new();
+
+        // Highest Transactions
         public Transaction? HighestInflowTransaction { get; set; }
         public Transaction? HighestOutflowTransaction { get; set; }
         public Transaction? HighestDebtTransaction { get; set; }
 
+        // Lowest Transactions
         public Transaction? LowestInflowTransaction { get; set; }
         public Transaction? LowestOutflowTransaction { get; set; }
         public Transaction? LowestDebtTransaction { get; set; }
 
-        // Updated balance calculation: Credits - Debits - Cleared Debts
-        public decimal Balance => TotalInflowAmount - TotalOutflowAmount - ClearedDebtAmount;
-
-        // Updated remaining debt calculation: Only show positive uncleared debt amount
-        public decimal RemainingDebt => TotalDebtAmount;
-
-        // New property to show total available balance including pending debts
-        public decimal TotalAvailableBalance => Balance - RemainingDebt;
-
-        // New property to show if the account has sufficient balance
-        public bool HasSufficientBalance => Balance >= 0;
-
+        // Counts
         public int TransactionCount { get; set; }
         public int CurrentMonthTransactions { get; set; }
+
+        // Calculated Properties
+        public decimal Balance => TotalInflowAmount - TotalOutflowAmount - ClearedDebtAmount;
+        public decimal RemainingDebt => TotalDebtAmount;
+        public decimal TotalAvailableBalance => Balance - RemainingDebt;
+        public bool HasSufficientBalance => Balance >= 0;
+
+        // Helper method to check if there's enough balance for a specific amount
+        public bool HasSufficientBalanceFor(decimal amount) => Balance >= amount;
+
+        // Helper method to get formatted currency string
+        public string FormatCurrency(decimal amount, string currencySymbol = "")
+            => $"{currencySymbol} {amount:N2}".Trim();
     }
 }

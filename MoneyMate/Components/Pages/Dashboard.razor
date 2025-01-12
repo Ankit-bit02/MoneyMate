@@ -1,4 +1,7 @@
-﻿@page "/dashboard"
+﻿@* @using Recharts *@
+@using System.Linq
+
+@page "/dashboard"
 @using MoneyMate.Services
 @using MoneyMate.Models
 @inject TransactionService TransactionService
@@ -95,124 +98,120 @@
         </div>
     </div>
 
-    <!-- Recent Transactions and Charts Section -->
-    @* <div class="row mb-4"> *@
-    @*     <div class="col-lg-8"> *@
-    @*         <div class="card shadow-sm"> *@
-    @*             <div class="card-header bg-white"> *@
-    @*                 <h5 class="mb-0">Recent Transactions</h5> *@
-    @*             </div> *@
-    @*             <div class="card-body"> *@
-    @*                 <!-- Transaction table will go here in next step --> *@
-    @*                 <p class="text-muted">No transactions found.</p> *@
-    @*             </div> *@
-    @*         </div> *@
-    @*     </div> *@
-    @*     <div class="col-lg-4"> *@
-    @*         <div class="card shadow-sm"> *@
-    @*             <div class="card-header bg-white"> *@
-    @*                 <h5 class="mb-0">Statistics</h5> *@
-    @*             </div> *@
-    @*             <div class="card-body"> *@
-    @*                 <!-- Charts will go here in next step --> *@
-    @*                 <p class="text-muted">No data available.</p> *@
-    @*             </div> *@
-    @*         </div> *@
-    @*     </div> *@
-    @* </div> *@
-
-    <div class="col-lg-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <h5 class="mb-0">Statistics</h5>
+    <!-- Main Content Section -->
+    <div class="row">
+        <!-- Recent Transactions Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Recent Transactions</h5>
+                </div>
+                <div class="card-body">
+                    @if (Summary?.Transactions != null && Summary.Transactions.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th class="text-end">Amount</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var transaction in Summary.Transactions)
+                                    {
+                                        <tr>
+                                            <td>@transaction.Date.ToShortDateString()</td>
+                                            <td>@transaction.Title</td>
+                                            <td>
+                                                <span class="badge @GetTransactionBadgeClass(transaction.Type)">
+                                                    @transaction.Type
+                                                </span>
+                                            </td>
+                                            <td class="text-end">@UserCurrency @transaction.Amount.ToString("N2")</td>
+                                            <td>@transaction.Note</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No transactions found.</p>
+                    }
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-                @if (Summary != null)
-                {
-                    <div class="mb-4">
-                        <h6 class="text-muted mb-3">Highest Transactions</h6>
-                        @if (Summary.HighestInflowTransaction != null)
-                        {
-                                <div class="mb-2">
-                                    <span class="badge bg-success">Highest Income</span>
-                                    <div class="mt-1">
-                                        <strong>@Summary.HighestInflowTransaction.Title</strong>
-                                        <div class="text-success">@UserCurrency @Summary.HighestInflowTransaction.Amount.ToString("N2")</div>
-                                        <small class="text-muted">@Summary.HighestInflowTransaction.Date.ToShortDateString()</small>
-                                    </div>
-                                </div>
-                        }
 
-                        @if (Summary.HighestOutflowTransaction != null)
-                        {
-                                <div class="mb-2">
-                                    <span class="badge bg-danger">Highest Expense</span>
-                                    <div class="mt-1">
-                                        <strong>@Summary.HighestOutflowTransaction.Title</strong>
-                                        <div class="text-danger">@UserCurrency @Summary.HighestOutflowTransaction.Amount.ToString("N2")</div>
-                                        <small class="text-muted">@Summary.HighestOutflowTransaction.Date.ToShortDateString()</small>
-                                    </div>
-                                </div>
-                        }
+        <!-- Statistics Section -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Statistics</h5>
+                </div>
+                <div class="card-body">
+                    @if (Summary != null)
+                    {
+                        <h6 class="text-muted mb-3">Transaction Distribution</h6>
+                        <div class="mb-4">
+                            <div style="height: 300px;" class="d-flex align-items-center justify-content-center">
+                                <p class="text-muted">Chart coming soon...</p>
+                            </div>
+                        </div>
 
-                        @if (Summary.HighestDebtTransaction != null)
-                        {
-                                <div class="mb-2">
-                                    <span class="badge bg-warning">Highest Debt</span>
-                                    <div class="mt-1">
-                                        <strong>@Summary.HighestDebtTransaction.Title</strong>
-                                        <div class="text-warning">@UserCurrency @Summary.HighestDebtTransaction.Amount.ToString("N2")</div>
-                                        <small class="text-muted">@Summary.HighestDebtTransaction.Date.ToShortDateString()</small>
-                                    </div>
-                                </div>
-                        }
-                    </div>
-
-                    <div>
                         <h6 class="text-muted mb-3">Transaction Summary</h6>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Total Transactions:</span>
-                            <strong>@(Summary.TransactionCount)</strong>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <td>Total Transactions</td>
+                                        <td class="text-end fw-bold">@Summary.TransactionCount</td>
+                                    </tr>
+                                    <tr>
+                                        <td>This Month</td>
+                                        <td class="text-end fw-bold">@Summary.CurrentMonthTransactions</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pending Debts</td>
+                                        <td class="text-end fw-bold">@Summary.PendingDebts.Count</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>This Month:</span>
-                            <strong>@(Summary.CurrentMonthTransactions)</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Pending Debts:</span>
-                            <strong>@(Summary.PendingDebts.Count)</strong>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <p class="text-muted">No data available.</p>
-                }
+                    }
+                    else
+                    {
+                        <p class="text-muted">No data available.</p>
+                    }
+                </div>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
 {
-            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
         @ErrorMessage
-                <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
-            </div>
+        <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty"></button>
+    </div>
 }
 @if (!string.IsNullOrEmpty(SuccessMessage))
 {
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
         @SuccessMessage
-                <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
-            </div>
+        <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty"></button>
+    </div>
 }
 
-<AddTransactionModal 
-    Show="ShowAddTransaction"
-    ShowChanged="(value) => ShowAddTransaction = value"
-    UserCurrency="@UserCurrency"
-    OnTransactionAdded="OnTransactionAdded" />
+<AddTransactionModal Show="ShowAddTransaction"
+                     ShowChanged="(value) => ShowAddTransaction = value"
+                     UserCurrency="@UserCurrency"
+                     OnTransactionAdded="OnTransactionAdded" />
 
 @code {
     private TransactionSummary Summary { get; set; } = new();
@@ -255,8 +254,6 @@
                 ErrorMessage = "Start date cannot be after end date";
                 return;
             }
-
-            Console.WriteLine($"Applying filter - Start: {StartDate:d}, End: {EndDate:d}"); // Debug log
             await LoadDashboard();
             StateHasChanged();
         }
@@ -305,5 +302,16 @@
             ErrorMessage = "Error updating dashboard after adding transaction.";
             Console.WriteLine($"Error in OnTransactionAdded: {ex.Message}");
         }
+    }
+
+    private string GetTransactionBadgeClass(TransactionType type)
+    {
+        return type switch
+        {
+            TransactionType.Credit => "bg-success",
+            TransactionType.Debit => "bg-danger",
+            TransactionType.Debt => "bg-warning",
+            _ => "bg-secondary"
+        };
     }
 }

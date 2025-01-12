@@ -191,7 +191,10 @@ namespace MoneyMate.Services
                 LowestDebtTransaction = debtTransactions.MinBy(t => t.Amount),
                 TransactionCount = transactions.Count,
                 CurrentMonthTransactions = transactions.Count(t => t.Date.Month == currentMonth &&
-                                                                 t.Date.Year == currentYear)
+                                                                 t.Date.Year == currentYear),
+                // Add the transactions list, ordered by date descending and take the most recent ones
+                Transactions = transactions.OrderByDescending(t => t.Date)
+                                         .ToList()
             };
         }
 
