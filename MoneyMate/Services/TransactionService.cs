@@ -153,6 +153,8 @@ namespace MoneyMate.Services
         public async Task<TransactionSummary> GetTransactionSummaryAsync(string username, DateTime? startDate = null, DateTime? endDate = null)
         {
             var transactions = await GetUserTransactionsAsync(username, startDate, endDate);
+            var currentMonth = DateTime.Now.Month;
+            var currentYear = DateTime.Now.Year;
 
             var totalInflow = transactions.Where(t => t.Type == TransactionType.Credit ||
                                                     (t.Type == TransactionType.Debt && !t.IsCleared))
@@ -167,6 +169,11 @@ namespace MoneyMate.Services
             var clearedDebts = transactions.Where(t => t.Type == TransactionType.Debt && t.IsCleared)
                                          .Sum(t => t.Amount);
 
+            // Get credit transactions for highest/lowest calculations
+            var creditTransactions = transactions.Where(t => t.Type == TransactionType.Credit).ToList();
+            var debitTransactions = transactions.Where(t => t.Type == TransactionType.Debit).ToList();
+            var debtTransactions = transactions.Where(t => t.Type == TransactionType.Debt).ToList();
+
             return new TransactionSummary
             {
                 TotalInflowAmount = totalInflow,
@@ -176,12 +183,15 @@ namespace MoneyMate.Services
                 PendingDebts = transactions.Where(t => t.Type == TransactionType.Debt && !t.IsCleared)
                                          .OrderBy(t => t.DueDate)
                                          .ToList(),
-                HighestInflowTransaction = transactions.Where(t => t.Type == TransactionType.Credit)
-                                                     .MaxBy(t => t.Amount),
-                HighestOutflowTransaction = transactions.Where(t => t.Type == TransactionType.Debit)
-                                                      .MaxBy(t => t.Amount),
-                HighestDebtTransaction = transactions.Where(t => t.Type == TransactionType.Debt)
-                                                   .MaxBy(t => t.Amount)
+                HighestInflowTransaction = creditTransactions.MaxBy(t => t.Amount),
+                HighestOutflowTransaction = debitTransactions.MaxBy(t => t.Amount),
+                HighestDebtTransaction = debtTransactions.MaxBy(t => t.Amount),
+                LowestInflowTransaction = creditTransactions.MinBy(t => t.Amount),
+                LowestOutflowTransaction = debitTransactions.MinBy(t => t.Amount),
+                LowestDebtTransaction = debtTransactions.MinBy(t => t.Amount),
+                TransactionCount = transactions.Count,
+                CurrentMonthTransactions = transactions.Count(t => t.Date.Month == currentMonth &&
+                                                                 t.Date.Year == currentYear)
             };
         }
 

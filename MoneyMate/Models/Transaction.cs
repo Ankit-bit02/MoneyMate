@@ -49,6 +49,10 @@ namespace MoneyMate.Models
         public Transaction? HighestOutflowTransaction { get; set; }
         public Transaction? HighestDebtTransaction { get; set; }
 
+        public Transaction? LowestInflowTransaction { get; set; }
+        public Transaction? LowestOutflowTransaction { get; set; }
+        public Transaction? LowestDebtTransaction { get; set; }
+
         // Updated balance calculation: Credits - Debits - Cleared Debts
         public decimal Balance => TotalInflowAmount - TotalOutflowAmount - ClearedDebtAmount;
 
@@ -60,5 +64,8 @@ namespace MoneyMate.Models
 
         // New property to show if the account has sufficient balance
         public bool HasSufficientBalance => Balance >= 0;
+
+        public int TransactionCount { get; set; }
+        public int CurrentMonthTransactions { get; set; }
     }
 }

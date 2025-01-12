@@ -96,30 +96,101 @@
     </div>
 
     <!-- Recent Transactions and Charts Section -->
-    <div class="row mb-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Recent Transactions</h5>
-                </div>
-                <div class="card-body">
-                    <!-- Transaction table will go here in next step -->
-                    <p class="text-muted">No transactions found.</p>
-                </div>
-            </div>
+    @* <div class="row mb-4"> *@
+    @*     <div class="col-lg-8"> *@
+    @*         <div class="card shadow-sm"> *@
+    @*             <div class="card-header bg-white"> *@
+    @*                 <h5 class="mb-0">Recent Transactions</h5> *@
+    @*             </div> *@
+    @*             <div class="card-body"> *@
+    @*                 <!-- Transaction table will go here in next step --> *@
+    @*                 <p class="text-muted">No transactions found.</p> *@
+    @*             </div> *@
+    @*         </div> *@
+    @*     </div> *@
+    @*     <div class="col-lg-4"> *@
+    @*         <div class="card shadow-sm"> *@
+    @*             <div class="card-header bg-white"> *@
+    @*                 <h5 class="mb-0">Statistics</h5> *@
+    @*             </div> *@
+    @*             <div class="card-body"> *@
+    @*                 <!-- Charts will go here in next step --> *@
+    @*                 <p class="text-muted">No data available.</p> *@
+    @*             </div> *@
+    @*         </div> *@
+    @*     </div> *@
+    @* </div> *@
+
+    <div class="col-lg-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Statistics</h5>
         </div>
-        <div class="col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Statistics</h5>
-                </div>
-                <div class="card-body">
-                    <!-- Charts will go here in next step -->
+        <div class="card-body">
+                @if (Summary != null)
+                {
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Highest Transactions</h6>
+                        @if (Summary.HighestInflowTransaction != null)
+                        {
+                                <div class="mb-2">
+                                    <span class="badge bg-success">Highest Income</span>
+                                    <div class="mt-1">
+                                        <strong>@Summary.HighestInflowTransaction.Title</strong>
+                                        <div class="text-success">@UserCurrency @Summary.HighestInflowTransaction.Amount.ToString("N2")</div>
+                                        <small class="text-muted">@Summary.HighestInflowTransaction.Date.ToShortDateString()</small>
+                                    </div>
+                                </div>
+                        }
+
+                        @if (Summary.HighestOutflowTransaction != null)
+                        {
+                                <div class="mb-2">
+                                    <span class="badge bg-danger">Highest Expense</span>
+                                    <div class="mt-1">
+                                        <strong>@Summary.HighestOutflowTransaction.Title</strong>
+                                        <div class="text-danger">@UserCurrency @Summary.HighestOutflowTransaction.Amount.ToString("N2")</div>
+                                        <small class="text-muted">@Summary.HighestOutflowTransaction.Date.ToShortDateString()</small>
+                                    </div>
+                                </div>
+                        }
+
+                        @if (Summary.HighestDebtTransaction != null)
+                        {
+                                <div class="mb-2">
+                                    <span class="badge bg-warning">Highest Debt</span>
+                                    <div class="mt-1">
+                                        <strong>@Summary.HighestDebtTransaction.Title</strong>
+                                        <div class="text-warning">@UserCurrency @Summary.HighestDebtTransaction.Amount.ToString("N2")</div>
+                                        <small class="text-muted">@Summary.HighestDebtTransaction.Date.ToShortDateString()</small>
+                                    </div>
+                                </div>
+                        }
+                    </div>
+
+                    <div>
+                        <h6 class="text-muted mb-3">Transaction Summary</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Transactions:</span>
+                            <strong>@(Summary.TransactionCount)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>This Month:</span>
+                            <strong>@(Summary.CurrentMonthTransactions)</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Pending Debts:</span>
+                            <strong>@(Summary.PendingDebts.Count)</strong>
+                        </div>
+                    </div>
+                }
+                else
+                {
                     <p class="text-muted">No data available.</p>
-                </div>
-            </div>
+                }
         </div>
     </div>
+</div>
 </div>
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
