@@ -1,4 +1,4 @@
-﻿@* @using Recharts *@
+﻿    
 @using System.Linq
 
 @page "/dashboard"
@@ -16,7 +16,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2 class="mb-0">Dashboard</h2>
-                    <p class="text-muted">Welcome back, @StateService.CurrentUsername!</p>
+                    <p class="text-muted">Welcome, @StateService.CurrentUsername!</p>
                 </div>
                 <div>
                     <button class="btn btn-primary me-2" @onclick="@(() => ShowAddTransaction = true)">
@@ -61,6 +61,13 @@
             </div>
         </div>
     </div>
+    <FilteredTransactionsModal 
+    Show="ShowFilteredTransactions"
+    ShowChanged="(value) => ShowFilteredTransactions = value"
+    Transactions="FilteredTransactions"
+    UserCurrency="@UserCurrency"
+    StartDate="StartDate"
+    EndDate="EndDate" />
 
     <!-- Summary Cards -->
     <div class="row mb-4">
@@ -151,19 +158,11 @@
         <div class="col-lg-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Statistics</h5>
+                    <h5 class="mb-0">Summary</h5>
                 </div>
                 <div class="card-body">
                     @if (Summary != null)
                     {
-                        <h6 class="text-muted mb-3">Transaction Distribution</h6>
-                        <div class="mb-4">
-                            <div style="height: 300px;" class="d-flex align-items-center justify-content-center">
-                                <p class="text-muted">Chart coming soon...</p>
-                            </div>
-                        </div>
-
-                        <h6 class="text-muted mb-3">Transaction Summary</h6>
                         <div class="table-responsive">
                             <table class="table">
                                 <tbody>
@@ -213,6 +212,9 @@
                      UserCurrency="@UserCurrency"
                      OnTransactionAdded="OnTransactionAdded" />
 
+
+
+
 @code {
     private TransactionSummary Summary { get; set; } = new();
     private DateTime? StartDate { get; set; }
@@ -221,6 +223,8 @@
     private string ErrorMessage { get; set; } = string.Empty;
     private string UserCurrency { get; set; } = string.Empty;
     private string SuccessMessage { get; set; } = string.Empty;
+    private bool ShowFilteredTransactions { get; set; }
+    private List<Transaction> FilteredTransactions { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -245,7 +249,7 @@
         NavigationManager.NavigateTo("/login");
     }
 
-    private async Task ApplyFilter()
+    private void ApplyFilter()
     {
         try
         {
@@ -254,8 +258,9 @@
                 ErrorMessage = "Start date cannot be after end date";
                 return;
             }
-            await LoadDashboard();
-            StateHasChanged();
+
+            var queryString = $"?StartDate={StartDate?.ToString("yyyy-MM-dd")}&EndDate={EndDate?.ToString("yyyy-MM-dd")}";
+            NavigationManager.NavigateTo($"/filtered-transactions{queryString}");
         }
         catch (Exception ex)
         {
@@ -314,4 +319,6 @@
             _ => "bg-secondary"
         };
     }
+
+
 }

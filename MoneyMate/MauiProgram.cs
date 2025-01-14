@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using MoneyMate.Services;
+using MudBlazor.Services;
 
 namespace MoneyMate
 {
@@ -25,6 +26,7 @@ namespace MoneyMate
             builder.Services.AddScoped<CsvService>();
             builder.Services.AddSingleton<StateService>();
             builder.Services.AddScoped<TransactionService>();
+            builder.Services.AddMudServices();
 
 
 
