@@ -1,6 +1,4 @@
-﻿    
-@using System.Linq
-
+﻿@using System.Linq
 @page "/dashboard"
 @using MoneyMate.Services
 @using MoneyMate.Models
@@ -21,6 +19,9 @@
                 <div>
                     <button class="btn btn-primary me-2" @onclick="@(() => ShowAddTransaction = true)">
                         <span class="fas fa-plus"></span> Add Transaction
+                    </button>
+                    <button class="btn btn-secondary me-2" @onclick="@(() => NavigationManager.NavigateTo("/transactions"))">
+                        <span class="fas fa-list"></span> View All Transactions
                     </button>
                     <button class="btn btn-info me-2 text-white" @onclick="@(() => NavigationManager.NavigateTo("/debts"))">
                         <span class="fas fa-money-bill"></span> Manage Debts

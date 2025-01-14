@@ -1,0 +1,311 @@
+﻿@page "/transactions"
+@using MoneyMate.Services
+@using MoneyMate.Models
+@inject TransactionService TransactionService
+@inject StateService StateService
+@inject NavigationManager NavigationManager
+@inject CsvService CsvService
+
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Transactions</h2>
+                    <p class="text-muted">View, Search and Filter Transactions</p>
+                </div>
+                <button class="btn btn-primary" @onclick="@(() => NavigationManager.NavigateTo("/dashboard"))">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Card -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Search -->
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               placeholder="Search by title..."
+                               @bind-value="SearchTerm"
+                               @bind-value:event="oninput">
+                    </div>
+                </div>
+
+                <!-- Transaction Type Filter -->
+                <div class="col-md-3">
+                    <select class="form-select" @bind="SelectedType">
+                        <option value="">All Types</option>
+                        <option value="Credit">Income</option>
+                        <option value="Debit">Expense</option>
+                        <option value="Debt">Debt</option>
+                    </select>
+                </div>
+
+                <!-- Tag Filter -->
+                <div class="col-md-3">
+                    <select class="form-select" @bind="SelectedTag">
+                        <option value="">All Tags</option>
+                        @foreach (var tag in AllTags)
+                        {
+                            <option value="@tag">@tag</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Sort Direction -->
+                <div class="col-md-2">
+                    <button class="btn @(IsAscending ? "btn-outline-primary" : "btn-primary") w-100" 
+                            @onclick="ToggleSortDirection">
+                        <i class="fas fa-sort"></i>
+                        @(IsAscending ? "Oldest First" : "Newest First")
+                    </button>
+                </div>
+            </div>
+
+            <!-- Date Range Filter -->
+            <div class="row mt-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">From</span>
+                        <input type="date" class="form-control" @bind="StartDate">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">To</span>
+                        <input type="date" class="form-control" @bind="EndDate">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary me-2" @onclick="ApplyFilters">
+                        Apply Filters
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="ResetFilters">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Filters Display -->
+    @if (HasActiveFilters)
+    {
+        <div class="mb-4">
+            <div class="d-flex flex-wrap gap-2">
+                @if (!string.IsNullOrEmpty(SearchTerm))
+                {
+                    <span class="badge bg-info">
+                        Search: @SearchTerm
+                        <button type="button" class="btn-close btn-close-white" 
+                                aria-label="Close" @onclick="() => SearchTerm = string.Empty"></button>
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(SelectedType))
+                {
+                    <span class="badge bg-primary">
+                        Type: @SelectedType
+                        <button type="button" class="btn-close btn-close-white" 
+                                aria-label="Close" @onclick="() => SelectedType = string.Empty"></button>
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(SelectedTag))
+                {
+                    <span class="badge bg-success">
+                        Tag: @SelectedTag
+                        <button type="button" class="btn-close btn-close-white" 
+                                aria-label="Close" @onclick="() => SelectedTag = string.Empty"></button>
+                    </span>
+                }
+                @if (StartDate.HasValue || EndDate.HasValue)
+                {
+                    <span class="badge bg-warning">
+                        Date Range: @(StartDate?.ToShortDateString() ?? "Start") - @(EndDate?.ToShortDateString() ?? "End")
+                        <button type="button" class="btn-close btn-close-white" 
+                                aria-label="Close" @onclick="ClearDateRange"></button>
+                    </span>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Transactions Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            @if (FilteredTransactions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th class="text-end">Amount</th>
+                                <th>Tags</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in FilteredTransactions)
+                            {
+                                <tr>
+                                    <td>@transaction.Date.ToShortDateString()</td>
+                                    <td>@transaction.Title</td>
+                                    <td>
+                                        <span class="badge @GetTransactionBadgeClass(transaction.Type)">
+                                            @transaction.Type
+                                        </span>
+                                    </td>
+                                    <td class="text-end">@UserCurrency @transaction.Amount.ToString("N2")</td>
+                                    <td>
+                                        @foreach (var tag in transaction.Tags)
+                                        {
+                                            <span class="badge bg-secondary me-1">@tag</span>
+                                        }
+                                    </td>
+                                    <td>@transaction.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No transactions found matching your criteria.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string SearchTerm { get; set; } = string.Empty;
+    private string SelectedType { get; set; } = string.Empty;
+    private string SelectedTag { get; set; } = string.Empty;
+    private DateTime? StartDate { get; set; }
+    private DateTime? EndDate { get; set; }
+    private bool IsAscending { get; set; }
+    private List<Transaction> AllTransactions { get; set; } = new();
+    private List<Transaction> FilteredTransactions { get; set; } = new();
+    private HashSet<string> AllTags { get; set; } = new();
+    private string UserCurrency { get; set; } = string.Empty;
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrEmpty(SearchTerm) ||
+        !string.IsNullOrEmpty(SelectedType) ||
+        !string.IsNullOrEmpty(SelectedTag) ||
+        StartDate.HasValue ||
+        EndDate.HasValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(StateService.CurrentUsername))
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        var user = await CsvService.GetUserAsync(StateService.CurrentUsername);
+        if (user != null)
+        {
+            UserCurrency = user.PreferredCurrency;
+        }
+
+        await LoadTransactions();
+    }
+
+    private async Task LoadTransactions()
+    {
+        AllTransactions = await TransactionService.GetUserTransactionsAsync(StateService.CurrentUsername);
+        AllTags = new HashSet<string>(AllTransactions.SelectMany(t => t.Tags));
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        var query = AllTransactions.AsEnumerable();
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            query = query.Where(t => t.Title.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Type filter
+        if (!string.IsNullOrEmpty(SelectedType))
+        {
+            query = query.Where(t => t.Type.ToString() == SelectedType);
+        }
+
+        // Tag filter
+        if (!string.IsNullOrEmpty(SelectedTag))
+        {
+            query = query.Where(t => t.Tags.Contains(SelectedTag));
+        }
+
+        // Date range filter
+        if (StartDate.HasValue)
+        {
+            query = query.Where(t => t.Date.Date >= StartDate.Value.Date);
+        }
+        if (EndDate.HasValue)
+        {
+            query = query.Where(t => t.Date.Date <= EndDate.Value.Date);
+        }
+
+        // Sort by date
+        query = IsAscending 
+            ? query.OrderBy(t => t.Date)
+            : query.OrderByDescending(t => t.Date);
+
+        FilteredTransactions = query.ToList();
+        StateHasChanged();
+    }
+
+    private void ResetFilters()
+    {
+        SearchTerm = string.Empty;
+        SelectedType = string.Empty;
+        SelectedTag = string.Empty;
+        StartDate = null;
+        EndDate = null;
+        IsAscending = false;
+        ApplyFilters();
+    }
+
+    private void ToggleSortDirection()
+    {
+        IsAscending = !IsAscending;
+        ApplyFilters();
+    }
+
+    private void ClearDateRange()
+    {
+        StartDate = null;
+        EndDate = null;
+        ApplyFilters();
+    }
+
+    private string GetTransactionBadgeClass(TransactionType type)
+    {
+        return type switch
+        {
+            TransactionType.Credit => "bg-success",
+            TransactionType.Debit => "bg-danger",
+            TransactionType.Debt => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+}
