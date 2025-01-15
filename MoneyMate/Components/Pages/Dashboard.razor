@@ -114,7 +114,7 @@
         <div class="col-12 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Recent Transactions</h5>
+                    <h5 class="mb-0">Top 5 Transactions</h5>
                 </div>
                 <div class="card-body">
                     @if (Summary?.Transactions != null && Summary.Transactions.Any())
@@ -131,7 +131,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var transaction in Summary.Transactions)
+                                    @foreach (var transaction in Summary.Transactions.OrderByDescending(t => t.Amount).Take(5))
                                     {
                                         <tr>
                                             <td>@transaction.Date.ToShortDateString()</td>
