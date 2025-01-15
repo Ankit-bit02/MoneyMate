@@ -1,4 +1,6 @@
-﻿@using System.Linq
+﻿@using MudBlazor
+@using MudBlazor.Charts
+@using System.Linq
 @page "/dashboard"
 @using MoneyMate.Services
 @using MoneyMate.Models
@@ -63,12 +65,12 @@
         </div>
     </div>
     <FilteredTransactionsModal 
-    Show="ShowFilteredTransactions"
-    ShowChanged="(value) => ShowFilteredTransactions = value"
-    Transactions="FilteredTransactions"
-    UserCurrency="@UserCurrency"
-    StartDate="StartDate"
-    EndDate="EndDate" />
+        Show="ShowFilteredTransactions"
+        ShowChanged="(value) => ShowFilteredTransactions = value"
+        Transactions="FilteredTransactions"
+        UserCurrency="@UserCurrency"
+        StartDate="StartDate"
+        EndDate="EndDate" />
 
     <!-- Summary Cards -->
     <div class="row mb-4">
@@ -108,8 +110,8 @@
 
     <!-- Main Content Section -->
     <div class="row">
-        <!-- Recent Transactions Section -->
-        <div class="col-lg-8">
+        <!-- Recent Transactions Section - Full Width -->
+        <div class="col-12 mb-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
                     <h5 class="mb-0">Recent Transactions</h5>
@@ -155,8 +157,8 @@
             </div>
         </div>
 
-        <!-- Statistics Section -->
-        <div class="col-lg-4">
+        <!-- Summary Section - Left Half -->
+        <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
                     <h5 class="mb-0">Summary</h5>
@@ -186,6 +188,33 @@
                     else
                     {
                         <p class="text-muted">No data available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Distribution Chart - Right Half -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Transaction Distribution</h5>
+                </div>
+                <div class="card-body">
+                    @if (Summary?.Transactions != null && Summary.Transactions.Any())
+                    {
+                        <MudChart ChartType="ChartType.Donut"
+                                  Width="300px"
+                                  Height="300px"
+                                  InputData="@GetTransactionTypeData()"
+                                  InputLabels="@GetTransactionTypeLabels()"
+                                  Class="mx-auto"
+                                  LegendPosition="Position.Bottom"
+                                  ChartOptions="@(new ChartOptions { ChartPalette = new string[] { "#28a745", "#dc3545", "#ffc107" } })" />
+
+                    }
+                    else
+                    {
+                        <p class="text-muted">No transaction data available for chart.</p>
                     }
                 </div>
             </div>
@@ -319,6 +348,28 @@
             TransactionType.Debt => "bg-warning",
             _ => "bg-secondary"
         };
+    }
+
+    private double[] GetTransactionTypeData()
+    {
+        if (Summary?.Transactions == null || !Summary.Transactions.Any())
+            return new double[] { };
+
+        var groupedTransactions = Summary.Transactions
+            .GroupBy(t => t.Type)
+            .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
+
+        return new[]
+        {
+        groupedTransactions.GetValueOrDefault(TransactionType.Credit, 0),
+        groupedTransactions.GetValueOrDefault(TransactionType.Debit, 0),
+        groupedTransactions.GetValueOrDefault(TransactionType.Debt, 0)
+    }.Select(x => (double)x).ToArray();
+    }
+
+    private string[] GetTransactionTypeLabels()
+    {
+        return new[] { "Credit", "Debit", "Debt" };
     }
 
 
