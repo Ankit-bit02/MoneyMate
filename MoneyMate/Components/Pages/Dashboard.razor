@@ -126,7 +126,7 @@
                                         <th>Date</th>
                                         <th>Title</th>
                                         <th>Type</th>
-                                        <th class="text-end">Amount</th>
+                                        <th>Amount</th>
                                         <th>Notes</th>
                                     </tr>
                                 </thead>
@@ -141,7 +141,7 @@
                                                     @transaction.Type
                                                 </span>
                                             </td>
-                                            <td class="text-end">@UserCurrency @transaction.Amount.ToString("N2")</td>
+                                            <td>@UserCurrency @transaction.Amount.ToString("N2")</td>
                                             <td>@transaction.Note</td>
                                         </tr>
                                     }
@@ -245,19 +245,20 @@
 
 
 @code {
-    private TransactionSummary Summary { get; set; } = new();
-    private DateTime? StartDate { get; set; }
-    private DateTime? EndDate { get; set; }
-    private bool ShowAddTransaction { get; set; }
-    private string ErrorMessage { get; set; } = string.Empty;
-    private string UserCurrency { get; set; } = string.Empty;
-    private string SuccessMessage { get; set; } = string.Empty;
-    private bool ShowFilteredTransactions { get; set; }
-    private List<Transaction> FilteredTransactions { get; set; } = new();
+    // Properties for managing dashboard state
+    private TransactionSummary Summary { get; set; } = new();  // Holds transaction summary data
+    private DateTime? StartDate { get; set; }  // Start date for filtering
+    private DateTime? EndDate { get; set; }  // End date for filtering
+    private bool ShowAddTransaction { get; set; }  // Controls add transaction modal
+    private string ErrorMessage { get; set; } = string.Empty;  // Stores error messages
+    private string UserCurrency { get; set; } = string.Empty;  // User's preferred currency
+    private string SuccessMessage { get; set; } = string.Empty;  // Stores success messages
+    private bool ShowFilteredTransactions { get; set; }  // Controls filtered transactions modal
+    private List<Transaction> FilteredTransactions { get; set; } = new();  // Stores filtered transactions
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()  // Initialize component
     {
-        if (string.IsNullOrEmpty(StateService.CurrentUsername))
+        if (string.IsNullOrEmpty(StateService.CurrentUsername))  // Check if user is logged in
         {
             NavigationManager.NavigateTo("/login");
             return;
@@ -265,29 +266,31 @@
 
         var user = await CsvService.GetUserAsync(StateService.CurrentUsername);
         if (user != null)
+        // Get user's currency preference
         {
             UserCurrency = user.PreferredCurrency;
         }
 
-        await LoadDashboard();
+        await LoadDashboard();  // Load dashboard data
     }
 
-    private void Logout()
+    private void Logout() // Handle user logout
     {
         StateService.CurrentUsername = string.Empty;
         NavigationManager.NavigateTo("/login");
     }
 
-    private void ApplyFilter()
+    private void ApplyFilter()  // Apply date filter to transactions
     {
         try
         {
-            if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate)
+            if (StartDate.HasValue && EndDate.HasValue && StartDate > EndDate) // Validate date range
             {
                 ErrorMessage = "Start date cannot be after end date";
                 return;
             }
 
+            // Create query string and navigate to filtered view
             var queryString = $"?StartDate={StartDate?.ToString("yyyy-MM-dd")}&EndDate={EndDate?.ToString("yyyy-MM-dd")}";
             NavigationManager.NavigateTo($"/filtered-transactions{queryString}");
         }
@@ -298,17 +301,18 @@
         }
     }
 
-    private async Task ResetFilter()
+    private async Task ResetFilter()  // Reset date filters
     {
         StartDate = null;
         EndDate = null;
         await LoadDashboard();
     }
 
-    private async Task LoadDashboard()
+    private async Task LoadDashboard()  // Load dashboard data
     {
         try
         {
+            // Get transaction summary from service
             Summary = await TransactionService.GetTransactionSummaryAsync(StateService.CurrentUsername, StartDate, EndDate);
             if (!string.IsNullOrEmpty(SuccessMessage))
             {
@@ -322,7 +326,7 @@
         }
     }
 
-    private async Task OnTransactionAdded()
+    private async Task OnTransactionAdded()  // Handle successful transaction addition
     {
         try
         {
@@ -338,7 +342,7 @@
         }
     }
 
-    private string GetTransactionBadgeClass(TransactionType type)
+    private string GetTransactionBadgeClass(TransactionType type)  // Get CSS class for transaction badge
     {
         return type switch
         {
@@ -349,16 +353,16 @@
         };
     }
 
-    private double[] GetTransactionTypeData()
+    private double[] GetTransactionTypeData()  // Get data for transaction distribution chart
     {
-        if (Summary?.Transactions == null || !Summary.Transactions.Any())
+        if (Summary?.Transactions == null || !Summary.Transactions.Any())  // Check if transactions exist
             return new double[] { };
 
-        var groupedTransactions = Summary.Transactions
+        var groupedTransactions = Summary.Transactions  // Group transactions by type and sum amounts
             .GroupBy(t => t.Type)
             .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
 
-        return new[]
+        return new[]  // Return array of amounts for each transaction type
         {
         groupedTransactions.GetValueOrDefault(TransactionType.Credit, 0),
         groupedTransactions.GetValueOrDefault(TransactionType.Debit, 0),
@@ -366,7 +370,7 @@
     }.Select(x => (double)x).ToArray();
     }
 
-    private string[] GetTransactionTypeLabels()
+    private string[] GetTransactionTypeLabels()  // Get labels for transaction chart
     {
         return new[] { "Credit", "Debit", "Debt" };
     }

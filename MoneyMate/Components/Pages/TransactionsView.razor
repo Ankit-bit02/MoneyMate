@@ -150,7 +150,7 @@
                                 <th>Date</th>
                                 <th>Title</th>
                                 <th>Type</th>
-                                <th class="text-end">Amount</th>
+                                <th>Amount</th>
                                 <th>Tags</th>
                                 <th>Notes</th>
                             </tr>
@@ -166,7 +166,7 @@
                                             @transaction.Type
                                         </span>
                                     </td>
-                                    <td class="text-end">@UserCurrency @transaction.Amount.ToString("N2")</td>
+                                    <td>@UserCurrency @transaction.Amount.ToString("N2")</td>
                                     <td>
                                         @foreach (var tag in transaction.Tags)
                                         {

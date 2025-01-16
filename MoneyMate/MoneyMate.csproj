@@ -58,9 +58,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Remove="wwwroot\Images\hero.png" />
+      <Content Remove="wwwroot\Images\why.png" />
+    </ItemGroup>
+
+    <ItemGroup>
       <None Include="wwwroot\Images\dotnet_bot.svg" />
-      <None Include="wwwroot\Images\heroimage.png" />
-      <None Include="wwwroot\Images\whyus.png" />
     </ItemGroup>
 
     <ItemGroup>

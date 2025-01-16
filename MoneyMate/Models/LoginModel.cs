@@ -3,7 +3,7 @@
 
 namespace MoneyMate.Models
 {
-    public class LoginModel
+    public class LoginModel  // Class representing the login form data structure
     {
         [Required(ErrorMessage = "Username is required")]
         public string Username { get; set; } = string.Empty;

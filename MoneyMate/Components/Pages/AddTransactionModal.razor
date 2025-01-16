@@ -5,6 +5,8 @@
 
 @if (Show)
 {
+
+    // Modal container with Bootstrap classes
     <div class="modal fade show" style="display: block;" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -89,24 +91,27 @@
 }
 
 @code {
-    [Parameter] public bool Show { get; set; }
-    [Parameter] public EventCallback<bool> ShowChanged { get; set; }
-    [Parameter] public string UserCurrency { get; set; } = string.Empty;
-    [Parameter] public EventCallback OnTransactionAdded { get; set; }
+    // Component Parameters
+    [Parameter] public bool Show { get; set; }  // Controls modal visibility
+    [Parameter] public EventCallback<bool> ShowChanged { get; set; }  // Event for modal visibility changes
+    [Parameter] public string UserCurrency { get; set; } = string.Empty;  // User's preferred currency
+    [Parameter] public EventCallback OnTransactionAdded { get; set; }  // Callback when transaction is added
 
-    private Transaction transaction = new();
-    private string tagInput = string.Empty;
-    private string ErrorMessage = string.Empty;
+    private Transaction transaction = new();  // Transaction model instance
+    private string tagInput = string.Empty;  // Holds tag input text
+    private string ErrorMessage = string.Empty;  // Stores error messages
     private readonly string[] commonTags = { "Monthly", "Food", "Drinks", "Clothes", "Gadgets", "Fuel", "Rent", "EMI", "Party" };
 
+    // Handles modal close action
     private async Task OnClose()
     {
         transaction = new();
         tagInput = string.Empty;
         ErrorMessage = string.Empty;
-        await ShowChanged.InvokeAsync(false);
+        await ShowChanged.InvokeAsync(false);  // Notify parent component
     }
 
+    // Adds a tag to the tag input
     private void AddTag(string tag)
     {
         if (string.IsNullOrEmpty(tagInput))
@@ -115,6 +120,7 @@
             tagInput += $", {tag}";
     }
 
+    // Handles form submission
     private async Task HandleSubmit()
     {
         try
@@ -137,14 +143,15 @@
 
             // Set username and tags
             transaction.Username = StateService.CurrentUsername;
-            transaction.Tags = tagInput.Split(',')
+            transaction.Tags = tagInput.Split(',')  // Convert comma-separated tags to list
                                      .Select(t => t.Trim())
                                      .Where(t => !string.IsNullOrEmpty(t))
                                      .ToList();
-
+            
+            // Save transaction
             await TransactionService.AddTransactionAsync(transaction);
 
-            // Show success message (you can add a success message property)
+            // Handle successful addition
             await OnTransactionAdded.InvokeAsync();  // This will refresh the dashboard
             await OnClose();  // Close the modal
 

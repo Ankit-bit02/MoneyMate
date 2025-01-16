@@ -1,5 +1,4 @@
-﻿@* @page "/" *@
-@page "/register"
+﻿@page "/register"
 @using MoneyMate.Models
 @using MoneyMate.Services
 @inject CsvService CsvService
@@ -86,33 +85,34 @@
 </div>
 
 @code {
+    // Initialize user model and state variables
     private User user = new User();
     private string errorMessage = string.Empty;
     private bool showSuccessMessage = false;
 
-    private async Task HandleRegistration()
+    private async Task HandleRegistration()  // Handle registration form submission
     {
         try
         {
-            if (await CsvService.IsUserExistsAsync(user.Username))
+            if (await CsvService.IsUserExistsAsync(user.Username))  // Check if username already exists
             {
                 errorMessage = "Username already exists!";
                 return;
             }
 
-            await CsvService.SaveUserAsync(user);
+            await CsvService.SaveUserAsync(user);  // Save new user
             showSuccessMessage = true;
             await Task.Delay(2000); // Show success message for 2 seconds
             NavigationManager.NavigateTo("/login");
         }
-        catch (Exception ex)
+        catch (Exception ex)  // Handle registration errors
         {
             errorMessage = "An error occurred during registration. Please try again.";
             Console.WriteLine($"Registration error: {ex.Message}");
         }
     }
 
-    private void NavigateToLogin()
+    private void NavigateToLogin()  // Navigate to login page
     {
         NavigationManager.NavigateTo("/login");
     }

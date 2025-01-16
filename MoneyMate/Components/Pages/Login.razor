@@ -1,7 +1,7 @@
 ﻿@page "/login"
 @using MoneyMate.Models
 @using MoneyMate.Services
-@inject CsvService CsvService
+@inject CsvService CsvService  
 @inject StateService StateService
 @inject NavigationManager NavigationManager
 
@@ -50,35 +50,40 @@
 </div>
 
 @code {
-    private LoginModel loginModel = new();
+    // Initialize login model and error message
+    private LoginModel loginModel = new();  
     private string errorMessage = string.Empty;
 
-    private async Task HandleLogin()
+    private async Task HandleLogin() // Handle login form submission
     {
         try
         {
-            Console.WriteLine($"Attempting login for user: {loginModel.Username}"); // Debug log
-            var loginResult = await CsvService.ValidateLoginAsync(loginModel.Username, loginModel.Password);
+            Console.WriteLine($"Attempting login for user: {loginModel.Username}"); // Debug log for login attempt
+            var loginResult = await CsvService.ValidateLoginAsync(loginModel.Username, loginModel.Password);  // Validate login credentials
 
+            // On successful login
             if (loginResult)
             {
                 Console.WriteLine("Login successful, setting username and navigating"); // Debug log
-                StateService.CurrentUsername = loginModel.Username;
-                NavigationManager.NavigateTo("/dashboard", true); // Force reload
+                StateService.CurrentUsername = loginModel.Username;  // Set current user
+                NavigationManager.NavigateTo("/dashboard", true); // Redirect to dashboard with page reload
             }
             else
             {
+                // On failed login
                 Console.WriteLine("Login failed"); // Debug log
                 errorMessage = "Invalid username or password";
             }
         }
         catch (Exception ex)
         {
+            // Handle any errors during login
             Console.WriteLine($"Login error: {ex.Message}"); // Debug log
             errorMessage = "An error occurred during login. Please try again.";
         }
     }
 
+    // Navigate to registration page
     private void NavigateToRegister()
     {
         NavigationManager.NavigateTo("/register");

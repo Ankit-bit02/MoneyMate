@@ -141,6 +141,7 @@
 }
 
 @code {
+    // Component state properties
     private List<Transaction> DebtsList { get; set; } = new();
     private string ErrorMessage { get; set; } = string.Empty;
     private string SuccessMessage { get; set; } = string.Empty;
@@ -148,9 +149,9 @@
     private Transaction? SelectedDebt { get; set; }
     private decimal PaymentAmount { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() // Initialize component
     {
-        if (string.IsNullOrEmpty(StateService.CurrentUsername))
+        if (string.IsNullOrEmpty(StateService.CurrentUsername)) // Redirect to login if user not authenticated
         {
             NavigationManager.NavigateTo("/login");
             return;
@@ -159,12 +160,13 @@
         await LoadDebts();
     }
 
+    // Load user's debts
     private async Task LoadDebts()
     {
         try
         {
             var transactions = await TransactionService.GetUserTransactionsAsync(StateService.CurrentUsername);
-            DebtsList = transactions.Where(t => t.Type == TransactionType.Debt)
+            DebtsList = transactions.Where(t => t.Type == TransactionType.Debt) // Filter and sort debt transactions
                               .OrderByDescending(t => t.Date)
                               .ToList();
         }
@@ -175,33 +177,36 @@
         }
     }
 
-    private void ShowClearDebtModal(Transaction debt)
+    private void ShowClearDebtModal(Transaction debt)  // Show modal for clearing debt
     {
         SelectedDebt = debt;
         PaymentAmount = debt.Amount;  // Default to full amount
         ShowDebtModal = true;
     }
 
-    private void CloseDebtModal()
+    private void CloseDebtModal()  // Close debt modal and reset values
     {
         ShowDebtModal = false;
         SelectedDebt = null;
         PaymentAmount = 0;
     }
 
-    private async Task ClearDebt(string debtId)
+    private async Task ClearDebt(string debtId) // Process debt clearing
     {
         try
         {
+            // Validate payment amount
             if (PaymentAmount <= 0 || SelectedDebt == null || PaymentAmount > SelectedDebt.Amount)
             {
                 ErrorMessage = "Invalid payment amount";
                 return;
             }
 
+            // Attempt to clear debt
             var result = await TransactionService.ClearDebtAsync(debtId, StateService.CurrentUsername, PaymentAmount);
             if (result)
             {
+                // Set success message based on payment type (full or partial)
                 SuccessMessage = PaymentAmount == SelectedDebt.Amount
                     ? "Debt cleared successfully!"
                     : $"Debt partially cleared. Remaining amount: {(SelectedDebt.Amount - PaymentAmount):C2}";
@@ -220,6 +225,7 @@
         }
     }
 
+    // Navigate back to dashboard
     private void NavigateToDashboard()
     {
         NavigationManager.NavigateTo("/dashboard");

@@ -66,34 +66,42 @@
 </div>
 
 @code {
+
+    // Parameters supplied from query string
     [Parameter]
     [SupplyParameterFromQuery]
-    public DateTime? StartDate { get; set; }
+    public DateTime? StartDate { get; set; } // Start date for filtering
 
     [Parameter]
     [SupplyParameterFromQuery]
-    public DateTime? EndDate { get; set; }
+    public DateTime? EndDate { get; set; }  // End date for filtering
 
-    private List<Transaction> Transactions { get; set; } = new();
-    private string UserCurrency { get; set; } = string.Empty;
+    // Component state properties
+    private List<Transaction> Transactions { get; set; } = new(); // List of filtered transactions
+    private string UserCurrency { get; set; } = string.Empty;  // User's preferred currency
 
+    // Initialize component
     protected override async Task OnInitializedAsync()
     {
         if (string.IsNullOrEmpty(StateService.CurrentUsername))
         {
+            // Redirect to login if user not authenticated
             NavigationManager.NavigateTo("/login");
             return;
         }
 
+
+        // Get user's preferred currency
         var user = await CsvService.GetUserAsync(StateService.CurrentUsername);
         if (user != null)
         {
             UserCurrency = user.PreferredCurrency;
         }
 
-        await LoadTransactions();
+        await LoadTransactions();  // Load filtered transactions
     }
 
+    // Load transactions based on date range
     private async Task LoadTransactions()
     {
         Transactions = await TransactionService.GetUserTransactionsAsync(
@@ -103,11 +111,13 @@
         );
     }
 
-    private void NavigateToDashboard()
+    private void NavigateToDashboard()  // Navigate back to dashboard
     {
         NavigationManager.NavigateTo("/dashboard");
     }
 
+
+    // Get appropriate CSS class for transaction type badge
     private string GetTransactionBadgeClass(TransactionType type)
     {
         return type switch
