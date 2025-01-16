@@ -29,9 +29,6 @@ namespace MoneyMate
             builder.Services.AddMudServices();
 
 
-
-
-
             return builder.Build();
         }
     }

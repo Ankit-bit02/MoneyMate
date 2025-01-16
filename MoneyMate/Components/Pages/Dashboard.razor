@@ -157,7 +157,33 @@
             </div>
         </div>
 
-        <!-- Summary Section - Left Half -->
+        <!-- Transaction Distribution Chart - Left Half -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Transaction Distribution</h5>
+                </div>
+                <div class="card-body">
+                    @if (Summary?.Transactions != null && Summary.Transactions.Any())
+                    {
+                        <MudChart ChartType="ChartType.Donut"
+                                  Width="300px"
+                                  Height="300px"
+                                  InputData="@GetTransactionTypeData()"
+                                  InputLabels="@GetTransactionTypeLabels()"
+                                  Class="mx-auto"
+                                  LegendPosition="Position.Bottom"
+                                  ChartOptions="@(new ChartOptions { ChartPalette = new string[] { "#28a745", "#dc3545", "#ffc107" } })" />
+                    }
+                    else
+                    {
+                        <p class="text-muted">No transaction data available for chart.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Section - Right Half -->
         <div class="col-md-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
@@ -188,33 +214,6 @@
                     else
                     {
                         <p class="text-muted">No data available.</p>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Transaction Distribution Chart - Right Half -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Transaction Distribution</h5>
-                </div>
-                <div class="card-body">
-                    @if (Summary?.Transactions != null && Summary.Transactions.Any())
-                    {
-                        <MudChart ChartType="ChartType.Donut"
-                                  Width="300px"
-                                  Height="300px"
-                                  InputData="@GetTransactionTypeData()"
-                                  InputLabels="@GetTransactionTypeLabels()"
-                                  Class="mx-auto"
-                                  LegendPosition="Position.Bottom"
-                                  ChartOptions="@(new ChartOptions { ChartPalette = new string[] { "#28a745", "#dc3545", "#ffc107" } })" />
-
-                    }
-                    else
-                    {
-                        <p class="text-muted">No transaction data available for chart.</p>
                     }
                 </div>
             </div>

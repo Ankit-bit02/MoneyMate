@@ -1,0 +1,266 @@
+﻿@page "/"
+@using MoneyMate.Services
+@inject NavigationManager NavigationManager
+@inject StateService StateService
+
+<div class="landing-page">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="">
+                <i class="fas fa-wallet text-primary me-2"></i>
+                <span class="fw-bold">MoneyMate</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#why-us">Why Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-primary me-2" @onclick="NavigateToLogin">Login</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-primary" @onclick="NavigateToRegister">Get Started</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center d-flex align-items-center min-vh-100">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 text-lg-start">
+                    <h1 class="display-4 fw-bold mb-4">
+                        Take Control of Your
+                        <span class="text-primary">Finances</span>
+                    </h1>
+                    <p class="lead mb-4">
+                        Track expenses, manage debts, and achieve your financial goals with MoneyMate -
+                        your personal finance companion.
+                    </p>
+                    <div class="d-flex gap-3 justify-content-lg-start justify-content-center">
+                        <button class="btn btn-primary btn-lg" @onclick="NavigateToRegister">
+                            Start for Free
+                        </button>
+                        <button class="btn btn-outline-primary btn-lg" @onclick="NavigateToLogin">
+                            Login
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0">
+                    <img src="/Images/heroimage.png" alt="Finance Management" class="img-fluid" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+        <div class="container py-5">
+            <h2 class="text-center mb-5">Powerful Features for Your Financial Journey</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-primary text-white rounded-circle mb-3">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4>Expense Tracking</h4>
+                            <p>Monitor your spending patterns with detailed categorization and visual insights.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-success text-white rounded-circle mb-3">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <h4>Debt Management</h4>
+                            <p>Keep track of your debts and plan your repayments effectively.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-info text-white rounded-circle mb-3">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <h4>Visual Analytics</h4>
+                            <p>Understand your finances better with intuitive charts and reports.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Us Section -->
+    <section id="why-us" class="py-5">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h2 class="mb-4">Why Choose MoneyMate?</h2>
+                    <div class="d-flex mb-4">
+                        <div class="me-3">
+                            <i class="fas fa-check-circle text-primary fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5>Simple and Intuitive</h5>
+                            <p>Easy-to-use interface that makes finance management a breeze.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex mb-4">
+                        <div class="me-3">
+                            <i class="fas fa-lock text-primary fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5>Secure and Private</h5>
+                            <p>Your financial data is encrypted and protected.</p>
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="fas fa-sync text-primary fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5>Real-time Updates</h5>
+                            <p>Stay updated with your finances anytime, anywhere.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <img src="/Images/whyus.png" alt="Why Choose Us" class="img-fluid" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="bg-primary text-white py-5">
+        <div class="container text-center py-3">
+            <h2 class="mb-4">Ready to Take Control of Your Finances?</h2>
+            <p class="lead mb-4">Join thousands of users who are already managing their finances better with MoneyMate.</p>
+            <button class="btn btn-light btn-lg px-5" @onclick="NavigateToRegister">
+                Get Started Now
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-3">MoneyMate</h5>
+                    <p class="mb-0">Your personal finance companion for a better financial future.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links">
+                        <a href="#" class="text-white me-3"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-instagram"></i></a>
+                    </div>
+                    <p class="mt-3 mb-0">&copy; 2024 MoneyMate. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<style>
+    .landing-page {
+        padding-top: 76px;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 4rem 0;
+    }
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        line-height: 60px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .social-links a {
+        font-size: 20px;
+        transition: opacity 0.3s;
+    }
+
+        .social-links a:hover {
+            opacity: 0.8;
+        }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .card {
+        transition: transform 0.3s;
+        cursor: pointer;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+
+    .btn {
+        transition: all 0.3s;
+    }
+
+    .navbar {
+        backdrop-filter: blur(10px);
+        background-color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    @@media (max-width: 768px) {
+        .hero-section {
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+            .hero-section .btn-group {
+                justify-content: center;
+            }
+
+        .landing-page {
+            padding-top: 60px;
+        }
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(StateService.CurrentUsername))
+        {
+            NavigationManager.NavigateTo("/dashboard");
+        }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void NavigateToRegister()
+    {
+        NavigationManager.NavigateTo("/register");
+    }
+}
